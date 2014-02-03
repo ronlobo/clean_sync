@@ -6,13 +6,12 @@ part of clean_sync.client;
 
 final Logger logger = new Logger('clean_sync');
 
-void handleData(List<Map> data, DataSet collection, String author) {
+Future handleData(List<Map> data, DataSet collection, String author) {
   collection.clear(author: 'clean_sync');
   List<DataMap> toAdd = [];
-  for (Map record in data) {
-    toAdd.add(new DataMap.from(record));
-  }
-  collection.addAll(toAdd, author: 'clean_sync');
+  return Future.forEach(data, (record) =>
+      new Future.delayed(new Duration(), () => toAdd.add(cleanify(record))))
+    .then((_) => collection.addAll(toAdd, author: 'clean_sync'));
 }
 
 void _applyChangeList (List source, DataList target, author) {
@@ -281,12 +280,11 @@ class Subscription {
         return;
       }
       _version = response['version'];
-      _handleData(response['data'], collection, _author);
-
-      logger.info("Got initial data, synced to version ${_version}");
-
-      // TODO remove the check? (restart/dispose should to sth about initialSynd)
-      if (!_initialSync.isCompleted) _initialSync.complete();
+      _handleData(response['data'], collection, _author).then((_) {
+        // TODO remove the check? (restart/dispose should to sth about initialSynd)
+        if (!_initialSync.isCompleted) _initialSync.complete();
+        logger.info("Got initial data, synced to version ${_version}");
+      });
 
       var subscription = _connection
         .sendPeriodically(_forceDataRequesting ?

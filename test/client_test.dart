@@ -211,11 +211,13 @@ void main() {
         'author', idGenerator, mockHandleData, mockHandleDiff, false);
 
       // when
-      handleData(data, months.collection, 'author');
+      handleData(data, months.collection, 'author')
 
       // then
-      expect(months.collection.length, equals(1));
-      expect(months.collection.first.containsValue("February"), isTrue);
+      .then((_) {
+        expect(months.collection.length, equals(1));
+        expect(months.collection.first.containsValue("February"), isTrue);
+      });
     });
 
     test("modifiedItems", () {
